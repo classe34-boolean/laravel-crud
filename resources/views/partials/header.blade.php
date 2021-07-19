@@ -12,7 +12,7 @@
             </li>
             <li class="nav-item {{ Route::currentRouteName() == 'beers.index' ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route("beers.index") }}">Beers <span class="sr-only">(current)</span></a>
-              </li
+              </li>
           </ul>
         </div>
       </nav>
