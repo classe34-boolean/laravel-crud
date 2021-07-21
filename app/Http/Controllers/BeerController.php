@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Beer;
+use Illuminate\Support\Str;
 
 class BeerController extends Controller
 {
@@ -15,7 +16,8 @@ class BeerController extends Controller
     public function index()
     {
         // $beers = Beer::all();
-        $beers = Beer::paginate(3);
+        // $beers = Beer::orderBy('id', 'DESC')->get();
+        $beers = Beer::orderBy('id', 'DESC')->paginate(5);
 
         return view("beers.index", compact('beers'));
     }
@@ -27,7 +29,7 @@ class BeerController extends Controller
      */
     public function create()
     {
-        //
+        return view("beers.create");
     }
 
     /**
@@ -38,7 +40,35 @@ class BeerController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $data = $request->all();
+        
+        // TODO: validazione
+
+        // 1: creo nuova istanza
+        $beer = new Beer();
+
+        // 2a: assegnazione valori
+        // $beer->brand = $data["brand"];
+        // $beer->name = $data["name"];
+        // $beer->alcohol = $data["alcohol"];
+        // $beer->price = $data["price"];
+        // $beer->img = $data["img"];
+        // $beer->description = $data["description"];
+        // $slug = $data["brand"] . " " . $data["name"];
+        // $beer->slug = Str::slug($slug, '-');
+
+        // 2b: Mass assignment
+        $slug = $data["brand"] . " " . $data["name"];
+        $data["slug"] = Str::slug($slug, '-');
+
+        $beer->fill($data); // IMPORTANTE: per utilizzare il fill(), serve aggiungere $fillable al Model
+
+        // 3: salvataggio istanza
+        $beer->save();
+
+        return redirect()
+            ->route('beers.show', $beer->id)
+            ->with('message', "Birra '" . $beer->brand . " " . $beer->name . "' creata correttamente");
     }
 
     /**
@@ -81,9 +111,11 @@ class BeerController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Beer $beer)
     {
-        //
+        // $beer = Beer::findOrFail($id);
+
+        return view("beers.edit", compact('beer'));
     }
 
     /**
@@ -93,9 +125,20 @@ class BeerController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Beer $beer)
     {
-        //
+        $data = $request->all();
+
+        // $beer = Beer::findOrFail($id);
+        // TODO: validazione
+
+        $slug = $data["brand"] . " " . $data["name"];
+        $data["slug"] = Str::slug($slug, '-');        
+        $beer->update($data); // ricordarsi di aggiungere il $fillable al Model
+        
+        return redirect()
+            ->route('beers.show', $beer->id)
+            ->with('message', "Birra '" . $beer->brand . " " . $beer->name . "' modificata correttamente");
     }
 
     /**
@@ -104,8 +147,13 @@ class BeerController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Beer $beer)
     {
-        //
+        // $beer = Beer::findOrFail($id);
+        $beer->delete();
+
+        return redirect()
+            ->route('beers.index')
+            ->with('deleted', "Birra '" . $beer->brand . " " .$beer->name . "' cancellata correttamente");
     }
 }
