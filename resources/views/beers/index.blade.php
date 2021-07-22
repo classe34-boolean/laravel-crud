@@ -38,10 +38,11 @@
                         <form 
                             action="{{ route('beers.destroy', $item->id) }}" 
                             method="POST"
-                            onSubmit = "return confirm('Sei sicuro di voler cancellare definitivamente {{ $item->brand }} {{ $item->name }}?')"
+                            onSubmit = "return confirm('Sei sicuro di voler cancellare definitivamente {{ addslashes($item->brand) }} {{ addslashes($item->name) }}?')"
                             >
                             @csrf
                             @method('DELETE')
+                            <input type="hidden" name="page" value="{{ Request::get('page') }}">
                             <input type="submit" class="btn btn-danger" value="DELETE">
                         </form>
                     </td>

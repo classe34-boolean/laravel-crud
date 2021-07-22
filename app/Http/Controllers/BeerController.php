@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Beer;
 use Illuminate\Support\Str;
-
+use Illuminate\Validation\Rule;
 class BeerController extends Controller
 {
     /**
@@ -17,7 +17,7 @@ class BeerController extends Controller
     {
         // $beers = Beer::all();
         // $beers = Beer::orderBy('id', 'DESC')->get();
-        $beers = Beer::orderBy('id', 'DESC')->paginate(5);
+        $beers = Beer::orderBy('id', 'DESC')->paginate(3);
 
         return view("beers.index", compact('beers'));
     }
@@ -40,9 +40,29 @@ class BeerController extends Controller
      */
     public function store(Request $request)
     {
+        $slug = $request->get("brand") . " " . $request->get("name");
+
+        $request->request->add(["slug" => Str::slug($slug, '-')]);
         $data = $request->all();
+
+        // dd($data);
         
         // TODO: validazione
+        $request->validate(
+            [
+                'brand' => 'required|max:20',
+                'name' => 'required|max:40',
+                'alcohol' => 'required|numeric|min:0|max:99.9',
+                'price' => 'required|numeric|min:0.01|max:999.99',
+                'img' => 'required|max:255',
+                'description' => 'required|max:65535',
+                'slug' => 'unique:beers'
+            ],
+            [
+                'slug.unique' => 'The combination brand-name should be unique.',
+                'required' => ':attribute is a mandatory field!'
+            ]
+        );
 
         // 1: creo nuova istanza
         $beer = new Beer();
@@ -58,9 +78,6 @@ class BeerController extends Controller
         // $beer->slug = Str::slug($slug, '-');
 
         // 2b: Mass assignment
-        $slug = $data["brand"] . " " . $data["name"];
-        $data["slug"] = Str::slug($slug, '-');
-
         $beer->fill($data); // IMPORTANTE: per utilizzare il fill(), serve aggiungere $fillable al Model
 
         // 3: salvataggio istanza
@@ -127,13 +144,32 @@ class BeerController extends Controller
      */
     public function update(Request $request, Beer $beer)
     {
+        $slug = $request->get("brand") . " " . $request->get("name");
+        $request->request->add(["slug" => Str::slug($slug, '-')]);
         $data = $request->all();
 
+        $request->validate(
+            [
+                'brand' => 'required|max:20',
+                'name' => 'required|max:40',
+                'alcohol' => 'required|numeric|min:0|max:99.9',
+                'price' => 'required|numeric|min:0.01|max:999.99',
+                'img' => 'required|max:255',
+                'description' => 'required|max:65535',
+                'slug' => [
+                        Rule::unique('beers')->ignore($beer->id),
+                    ]
+            ],
+            [
+                'slug.unique' => 'The combination brand-name should be unique.',
+                'required' => ':attribute is a mandatory field!'
+            ]
+        );
         // $beer = Beer::findOrFail($id);
         // TODO: validazione
 
-        $slug = $data["brand"] . " " . $data["name"];
-        $data["slug"] = Str::slug($slug, '-');        
+        // $slug = $data["brand"] . " " . $data["name"];
+        // $data["slug"] = Str::slug($slug, '-');        
         $beer->update($data); // ricordarsi di aggiungere il $fillable al Model
         
         return redirect()
@@ -147,12 +183,18 @@ class BeerController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Beer $beer)
+    public function destroy(Request $request, Beer $beer)
     {
         // $beer = Beer::findOrFail($id);
         $beer->delete();
+        // soluzione 1 per recuperare dato inviato con il form
+        // dd($_POST["page"]);
+
+        // soluzione 2 per recuperare dato inviato con il form, aggiungendo $request alla firma della destroy
+        // dd($request->get('page'));
 
         return redirect()
+            // ->route('beers.index', ['page' => $request->get('page')])
             ->route('beers.index')
             ->with('deleted', "Birra '" . $beer->brand . " " .$beer->name . "' cancellata correttamente");
     }
